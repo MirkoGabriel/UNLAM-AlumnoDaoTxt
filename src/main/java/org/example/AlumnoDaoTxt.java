@@ -4,9 +4,9 @@ import org.apache.commons.lang3.math.NumberUtils;
 import persona.*;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
@@ -14,10 +14,13 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 public class AlumnoDaoTxt extends Dao<Alumno, Integer> {
-    private RandomAccessFile raf;
-    private static final String HEADER_TEXT = "    DNI   |      NAME       |     SURNAME     | GENDER |  BIRTHDAY  |";
-    private static final String HEADER_SEPARATOR = "----------|-----------------|-----------------|--------|------------|";
-    private static final String ROW_SEPARATOR = "__________|_________________|_________________|________|____________|";
+    private final RandomAccessFile raf;
+    private static final String separador = Pattern.quote(" | ");
+    private static final String HEADER_TEXT = "    DNI   |      NAME       |     SURNAME     | GENDER |  BIRTHDAY  | ADMISSION DATE | APPROVED SUBJECTS | AVERAGE | STATUS |";
+    private static final String HEADER_SEPARATOR = "----------|-----------------|-----------------|--------|" +
+            "------------|----------------|-------------------|---------|--------|";
+    private static final String ROW_SEPARATOR = "__________|_________________|_________________|________|____________|_" +
+            "_______________|___________________|_________|________|";
 
     public AlumnoDaoTxt(String fullPath) throws DaoException {
         try {
@@ -38,7 +41,7 @@ public class AlumnoDaoTxt extends Dao<Alumno, Integer> {
         }
         try {
             raf.seek(raf.length());
-            raf.writeBytes(" " + alumno.toString() + System.lineSeparator());
+            raf.writeBytes(" " + alumno + System.lineSeparator());
             raf.writeBytes(ROW_SEPARATOR + System.lineSeparator());
             close();
         } catch (IOException e) {
@@ -54,14 +57,14 @@ public class AlumnoDaoTxt extends Dao<Alumno, Integer> {
             while ((line = raf.readLine()) != null) {
                 idReaded = line.substring(1, 9);
                 if (id.equals(NumberUtils.toInt(idReaded, 0))) {
-                    String separador = Pattern.quote(" | ");
                     List<String> studentRow = Arrays.asList(line.split(separador));
                     studentRow.replaceAll(String::trim);
                     return parseStudent(studentRow);
                 }
             }
             close();
-        } catch (IOException | AlumnoException | PersonaNombreException | PersonaDniException | MiCalendarioException e) {
+        } catch (IOException | AlumnoException | PersonaNombreException | PersonaDniException |
+                 MiCalendarioException e) {
             Logger.getLogger(AlumnoDaoTxt.class.getName()).log(Level.SEVERE, null, e);
             throw new DaoException("Error into read operation: " + e.getLocalizedMessage());
         }
@@ -78,7 +81,7 @@ public class AlumnoDaoTxt extends Dao<Alumno, Integer> {
                 idReaded = line.substring(1, 9);
                 if (student.getDni() == NumberUtils.toInt(idReaded, 0)) {
                     raf.seek(pos);
-                    raf.writeBytes(" " + student.toString() + System.lineSeparator());
+                    raf.writeBytes(" " + student + System.lineSeparator());
                     return;
                 }
                 pos = raf.getFilePointer();
@@ -99,7 +102,28 @@ public class AlumnoDaoTxt extends Dao<Alumno, Integer> {
 
     @Override
     public List<Alumno> findAll(boolean onlyActive) throws DaoException {
-        return null;
+        try {
+            raf.seek(0);
+            String line;
+            List<Alumno> studentList = new ArrayList<>();
+            while ((line = raf.readLine()) != null) {
+                if (!HEADER_TEXT.equals(line) && !HEADER_SEPARATOR.equals(line) && !ROW_SEPARATOR.equals(line)) {
+                    List<String> studentRow = Arrays.asList(line.split(separador));
+                    studentRow.replaceAll(String::trim);
+                    if(onlyActive && "A".equals(studentRow.get(8))){
+                        studentList.add(parseStudent(studentRow));
+                    }
+                    if(!onlyActive){
+                        studentList.add(parseStudent(studentRow));
+                    }
+                }
+            }
+            return studentList;
+        } catch (IOException | AlumnoException | PersonaNombreException | PersonaDniException |
+                 MiCalendarioException e) {
+            Logger.getLogger(AlumnoDaoTxt.class.getName()).log(Level.SEVERE, null, e);
+            throw new DaoException("Error into update operation: " + e.getLocalizedMessage());
+        }
     }
 
     @Override
@@ -132,15 +156,21 @@ public class AlumnoDaoTxt extends Dao<Alumno, Integer> {
     }
 
     public Alumno parseStudent(List<String> studentRow) throws AlumnoException, PersonaNombreException, PersonaDniException, MiCalendarioException {
-        char gender = studentRow.get(3).charAt(0);
         Integer dni = Integer.valueOf(studentRow.get(0));
         String name = studentRow.get(1);
         String surname = studentRow.get(2);
+        char gender = studentRow.get(3).charAt(0);
         MiCalendario birthday = parseStudentDates(studentRow.get(4));
-        return new Alumno(null, 0, 0, gender, dni, name, surname, birthday);
+        MiCalendario admissionDate = parseStudentDates(studentRow.get(5));
+        Integer approvedSubjectQueantity = Integer.valueOf(studentRow.get(6));
+        Double average = Double.valueOf(studentRow.get(6));
+        return new Alumno(admissionDate, approvedSubjectQueantity, average, gender, dni, name, surname, birthday);
     }
 
     public MiCalendario parseStudentDates(String date) throws MiCalendarioException {
+        if ("null".equals(date)) {
+            return null;
+        }
         String separador = Pattern.quote("/");
         String[] birthdaySeparate = date.split(separador);
         int day = Integer.parseInt(birthdaySeparate[0]);
