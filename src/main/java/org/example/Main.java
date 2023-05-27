@@ -1,24 +1,26 @@
 package org.example;
 
-import persona.*;
+import person.*;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Main {
     public static void main(String[] args) {
-
-        //Student row information at 1h 31min
-        //Make read, readAll (include activeStudents boolean),
         try {
-            Dao<Alumno, Integer> daoAlumnoTxt = new AlumnoDaoTxt("Test.txt");
-            MiCalendario birthday = new MiCalendario(25,1,1976);
-            MiCalendario admissionDate = new MiCalendario(1,3,2020);
+            Dao<Student, Integer> daoStudentTxt = new StudentDaoTxt("Test.txt");
+            MyCalendar birthday = new MyCalendar(3, 4, 196);
+            MyCalendar admissionDate = new MyCalendar(11, 6, 2023);
 
-            Alumno student = new Alumno(admissionDate, 22, 4.1, 'F', 93873481, "Erika", "Cisneros", birthday);
-            daoAlumnoTxt.findAll(true);
-        } catch (DaoException | MiCalendarioException | PersonaNombreException | AlumnoException | PersonaDniException e) {
-            Logger.getLogger(AlumnoDaoTxt.class.getName()).log(Level.SEVERE, null, e);
+            Student student = new Student(admissionDate, 23, 7.1, 'F', 4512123, "Martina", "gerez", birthday);
+            daoStudentTxt.create(student);
+           /* daoStudentTxt.findAll(true).forEach(a -> {
+                System.out.println(a);
+            });*/
+
+        } catch (DaoException | MyCalendarException | PersonNameException | StudentException |
+                 PersonDniException e) {
+            Logger.getLogger(StudentDaoTxt.class.getName()).log(Level.SEVERE, null, e);
         }
     }
 }
