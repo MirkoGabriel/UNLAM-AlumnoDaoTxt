@@ -54,7 +54,6 @@ public class StudentDaoSql extends Dao<Student, Integer> {
             psInsert.setInt(7, student.getApprovedSubjectQuantity());
             psInsert.setDouble(8, student.getAverage());
             psInsert.execute();
-            close();
         } catch (SQLException e) {
             throw new DaoException(e.getLocalizedMessage());
         }
@@ -95,7 +94,6 @@ public class StudentDaoSql extends Dao<Student, Integer> {
             psUpdate.setDouble(7, student.getAverage());
             psUpdate.setInt(8, student.getDni());
             psUpdate.execute();
-            close();
         } catch (SQLException e) {
             throw new DaoException(e.getLocalizedMessage());
         }
@@ -106,7 +104,6 @@ public class StudentDaoSql extends Dao<Student, Integer> {
         try {
             psDelete.setInt(1, dni);
             psDelete.executeUpdate();
-            close();
         } catch (SQLException e) {
             throw new DaoException(e.getLocalizedMessage());
         }
