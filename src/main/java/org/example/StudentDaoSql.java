@@ -62,24 +62,31 @@ public class StudentDaoSql extends Dao<Student, Integer> {
     @Override
     public Student read(Integer dni) throws DaoException {
         try {
-            Student student = new Student();
+            Student student = null;
             psSelect.setInt(1, dni);
             ResultSet rs = psSelect.executeQuery();
 
             if (rs.next()) {
-                student.setDni(rs.getInt("dni"));
-                student.setName(rs.getString("name"));
-                student.setSurname(rs.getString("surname"));
-                student.setBirthday(new MyCalendar(rs.getDate("birthday")));
-                student.setAdmissionDate(new MyCalendar(rs.getDate("admission_date")));
-                student.setGender(rs.getString("gender").charAt(0));
-                student.setApprovedSubjectQuantity(rs.getInt("approved_subject_quantity"));
-                student.setAverage(rs.getDouble("average"));
+                student = getStudent(rs);
             }
             return student;
         } catch (SQLException | PersonDniException | PersonNameException | StudentException e) {
             throw new DaoException(e.getLocalizedMessage());
         }
+    }
+
+    private static Student getStudent(ResultSet rs) throws PersonDniException, SQLException, PersonNameException, StudentException {
+        Student student;
+        student = new Student();
+        student.setDni(rs.getInt("dni"));
+        student.setName(rs.getString("name"));
+        student.setSurname(rs.getString("surname"));
+        student.setBirthday(new MyCalendar(rs.getDate("birthday")));
+        student.setAdmissionDate(new MyCalendar(rs.getDate("admission_date")));
+        student.setGender(rs.getString("gender").charAt(0));
+        student.setApprovedSubjectQuantity(rs.getInt("approved_subject_quantity"));
+        student.setAverage(rs.getDouble("average"));
+        return student;
     }
 
     @Override
@@ -117,16 +124,7 @@ public class StudentDaoSql extends Dao<Student, Integer> {
             ResultSet rs = psSelectAll.executeQuery();
 
             while (rs.next()) {
-                student = new Student();
-                student.setDni(rs.getInt("dni"));
-                student.setName(rs.getString("name"));
-                student.setSurname(rs.getString("surname"));
-                student.setBirthday(new MyCalendar(rs.getDate("birthday")));
-                student.setAdmissionDate(new MyCalendar(rs.getDate("admission_date")));
-                student.setGender(rs.getString("gender").charAt(0));
-                student.setApprovedSubjectQuantity(rs.getInt("approved_subject_quantity"));
-                student.setAverage(rs.getDouble("average"));
-                students.add(student);
+                students.add(getStudent(rs));
             }
             return students;
         } catch (SQLException | PersonDniException | PersonNameException | StudentException e) {
