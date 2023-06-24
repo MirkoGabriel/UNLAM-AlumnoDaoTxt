@@ -19,7 +19,7 @@ public class StudentDaoSql extends Dao<Student, Integer> {
             conn = DriverManager.getConnection(url, user, pass);
 
             //CREATE
-            String sqlInsert = "INSERT INTO students(dni, name, surname,gender,birthday,admission_date,approved_subject_quantity,average) VALUES(?,?,?,?,?,?,?,?)";
+            String sqlInsert = "INSERT INTO students(dni, name, surname,gender,birthday,admission_date,approved_subject_quantity,average, active) VALUES(?,?,?,?,?,?,?,?,?)";
             psInsert = conn.prepareStatement(sqlInsert);
 
             //SELECT ALL
@@ -31,7 +31,7 @@ public class StudentDaoSql extends Dao<Student, Integer> {
             psSelect = conn.prepareStatement(sqlSelect);
 
             //UPDATE
-            String sqlUpdate = "UPDATE students SET name = ?, surname = ?, gender = ?, birthday = ?, admission_date = ?, approved_subject_quantity = ?, average = ? WHERE dni = ?";
+            String sqlUpdate = "UPDATE students SET name = ?, surname = ?, gender = ?, birthday = ?, admission_date = ?, approved_subject_quantity = ?, average = ?, active = ?  WHERE dni = ?";
             psUpdate = conn.prepareStatement(sqlUpdate);
 
             //DELETE
@@ -53,6 +53,7 @@ public class StudentDaoSql extends Dao<Student, Integer> {
             psInsert.setDate(6, student.getAdmissionDate().toSqlDate());
             psInsert.setInt(7, student.getApprovedSubjectQuantity());
             psInsert.setDouble(8, student.getAverage());
+            psInsert.setBoolean(9, student.isActive());
             psInsert.execute();
         } catch (SQLException e) {
             throw new DaoException(e.getLocalizedMessage());
@@ -86,6 +87,7 @@ public class StudentDaoSql extends Dao<Student, Integer> {
         student.setGender(rs.getString("gender").charAt(0));
         student.setApprovedSubjectQuantity(rs.getInt("approved_subject_quantity"));
         student.setAverage(rs.getDouble("average"));
+        student.setActive(rs.getBoolean("active"));
         return student;
     }
 
@@ -99,7 +101,8 @@ public class StudentDaoSql extends Dao<Student, Integer> {
             psUpdate.setDate(5, student.getAdmissionDate().toSqlDate());
             psUpdate.setInt(6, student.getApprovedSubjectQuantity());
             psUpdate.setDouble(7, student.getAverage());
-            psUpdate.setInt(8, student.getDni());
+            psUpdate.setBoolean(8, student.isActive());
+            psUpdate.setInt(9, student.getDni());
             psUpdate.execute();
         } catch (SQLException e) {
             throw new DaoException(e.getLocalizedMessage());
@@ -124,7 +127,11 @@ public class StudentDaoSql extends Dao<Student, Integer> {
             ResultSet rs = psSelectAll.executeQuery();
 
             while (rs.next()) {
-                students.add(getStudent(rs));
+                if(onlyActive && rs.getBoolean("active") == true){
+                    students.add(getStudent(rs));
+                }else if(!onlyActive){
+                    students.add(getStudent(rs));
+                }
             }
             return students;
         } catch (SQLException | PersonDniException | PersonNameException | StudentException e) {
